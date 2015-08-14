@@ -34,44 +34,9 @@ public class AIBiplane extends Biplane{
     @Override
     public void update(Canvas canvas) {
         behave(canvas);
-        updatePosition(canvas);
-        animate();
+        updateStats(canvas);
         rotate();
-        shoot(canvas);
-    }
-
-    @Override
-    protected void updatePosition(Canvas canvas) {
-
-        biplaneSpeed.update();
-        if (hpAmount == 0) {
-            biplaneSpeed.setYAcceleration(-0.07F);
-            biplaneSpeed.setXAcceleration(-0.07F);
-            posY += Const.B_FALLING_SPEED;
-        }
-
-        posX += biplaneSpeed.getXShift() * Math.cos(Math.toRadians(spriteHandler.getTiltDegree()));
-        posY += biplaneSpeed.getXShift() * Math.sin(Math.toRadians(spriteHandler.getTiltDegree()));
-
-        posX -= biplaneSpeed.getYShift() * Math.sin(Math.toRadians(spriteHandler.getTiltDegree()));
-        posY -= biplaneSpeed.getYShift() * Math.cos(Math.toRadians(spriteHandler.getTiltDegree()));
-
-
-        if (posX < 0) {
-            posX = canvas.getWidth() * Const.W_WIDTH_COEFF + posX;
-        }
-        if (posX > canvas.getWidth() * Const.W_WIDTH_COEFF) {
-            posX %= canvas.getWidth() * Const.W_WIDTH_COEFF;
-        }
-
-        if (posY < 0) {
-            posY = 0;
-        }
-
-        if (posY  >= canvas.getHeight() * Const.W_HEIGHT_COEFF - Const.G_HEIGHT * context.getResources().getDisplayMetrics().density) {
-            hpAmount = 0;
-            posY = canvas.getHeight() * Const.W_HEIGHT_COEFF - Const.G_HEIGHT * context.getResources().getDisplayMetrics().density;
-        }
+        animate();
     }
 
     protected void behave(Canvas canvas) {

@@ -14,12 +14,14 @@ import com.la4domain.games.biplanes.objects.AIBiplane;
 import com.la4domain.games.biplanes.objects.Biplane;
 import com.la4domain.games.biplanes.objects.Cloud;
 import com.la4domain.games.biplanes.objects.HealthBar;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
 import com.la4domain.games.biplanes.objects.Ground;
 import com.la4domain.games.biplanes.objects.Tank;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
+import com.la4domain.games.biplanes.objects.components.EntityObject;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 public class MainGameView extends SurfaceView implements SurfaceHolder.Callback {
@@ -27,7 +29,8 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
     private static final String LOG_TAG = MainGameView.class.getSimpleName();
 
     private GameLoopThread thread;
-    private List collisionableList;
+    private List collisionList;
+    private List objectList;
 
     private Biplane playerBiplane;
     private Tank[] tanks;
@@ -38,7 +41,7 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
     private Bitmap startGameBitmap;
 
     private float cameraXPos, cameraYPos; // coordinates of top left corner of the camera
-    public static boolean gameState; //true - currently playing, false - start menu
+    private static boolean gameState; //true - currently playing, false - start menu
 
     public MainGameView(Context context) {
         super(context);
@@ -57,6 +60,9 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
 
         if (thread.getState() == Thread.State.NEW) {
 
+            objectList = new LinkedList<DrawableObject>();
+            collisionList = new LinkedList<EntityObject>();
+
             cameraXPos = cameraYPos = 0;
             gameState = false;
 
@@ -68,37 +74,55 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
             Bitmap biplaneBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.biplane);
             startGameBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.startgame);
 
-            //OBJECTS CREATION;
-            collisionableList = new LinkedList<BaseObject>();
-            playerBiplane = new Biplane(getContext(), collisionableList, biplaneBitmap, getWidth(), worldHeight() / 2);
+            //OBJECTS CREATION
+            playerBiplane = new Biplane(getContext(), collisionList, biplaneBitmap, worldWidth() / 2, worldHeight() / 2);
             ground = new Ground(getContext(), groundBitmap, 0, worldHeight() - groundBitmap.getHeight() / 2);
 
             tanks = new Tank[Const.T_TANKS_AMOUNT];
             for (int i = 0; i < Const.T_TANKS_AMOUNT; i++) {
-                tanks[i] = new Tank(getContext(), collisionableList, tankBitmap, worldWidth() / Const.T_TANKS_AMOUNT * i,
+                tanks[i] = new Tank(getContext(), collisionList, tankBitmap, worldWidth() / Const.T_TANKS_AMOUNT * i,
                         worldHeight() - (Const.T_HEIGHT * getResources().getDisplayMetrics().density) / 2 - groundBitmap.getHeight() / 2);
             }
 
-            hpBar = new HealthBar(getContext(), hpBitmap, hpBitmap.getWidth() / 2 + getHeight() / 20, Const.HP_HEIGHT * getResources().getDisplayMetrics().density  / 2 + getHeight() / 20, playerBiplane);
-
             biplanes = new AIBiplane[Const.AI_AMOUNT];
             for (int i = 0; i < Const.AI_AMOUNT; i++) {
-                biplanes[i] = new AIBiplane(getContext(), collisionableList, aiBiplaneBitmap, getWidth(), getHeight());
+                biplanes[i] = new AIBiplane(getContext(), collisionList, aiBiplaneBitmap, getWidth(), getHeight());
             }
 
             clouds = new Cloud[Const.C_AMOUNT];
             cloudGenerator();
 
-            collisionableList.add(playerBiplane);
+            hpBar = new HealthBar(getContext(), hpBitmap, hpBitmap.getWidth() / 2 + getHeight() / 20, Const.HP_HEIGHT * getResources().getDisplayMetrics().density  / 2 + getHeight() / 20, playerBiplane);
+
+            //FILLING objectList IN RENDERING ORDER
+            objectList.add(ground);
+
+            for (int i = 0; i < Const.T_TANKS_AMOUNT; i++) {
+                objectList.add(tanks[i]);
+            }
 
             for (int i = 0; i < Const.AI_AMOUNT; i++) {
-                collisionableList.add(biplanes[i]);
+                objectList.add(biplanes[i]);
             }
-            collisionableList.add(ground); // WTF?
+
+            objectList.add(playerBiplane);
+
+            for (int i = 0; i < Const.C_AMOUNT; i++) {
+                objectList.add(clouds[i]);
+            }
+
+            objectList.add(hpBar);
+
+
+            //FILLING collisionList
+            collisionList.add(playerBiplane);
+
+            for (int i = 0; i < Const.AI_AMOUNT; i++) {
+                collisionList.add(biplanes[i]);
+            }
             for (int i = 0; i < Const.T_TANKS_AMOUNT; i++) {
-                collisionableList.add(tanks[i]);
+                collisionList.add(tanks[i]);
             }
-            //END
 
             thread.setRunning(true);
             thread.start();
@@ -135,11 +159,8 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
 
         if (!gameState && event.getActionMasked() == MotionEvent.ACTION_UP) {
             MainGameView.gameState = true;
-            Bitmap hpBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.healthbar);
             Bitmap biplaneBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.biplane);
-            playerBiplane = new Biplane(getContext(), collisionableList, biplaneBitmap, getWidth(), worldHeight() / 2);
-            collisionableList.set(0, playerBiplane);
-            hpBar = new HealthBar(getContext(), hpBitmap, hpBitmap.getWidth() / 2 + getHeight() / 20, Const.HP_HEIGHT * getResources().getDisplayMetrics().density  / 2 + getHeight() / 20, playerBiplane);
+            playerBiplane.reset(biplaneBitmap, worldWidth() / 2, worldHeight() / 2);
         }
         else {
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN || event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
@@ -175,19 +196,10 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     public void loop(Canvas canvas) {
 
-        if (gameState) {
-            playerBiplane.update(canvas);
-            hpBar.update(canvas);
-        }
-        for (int i = 0; i < Const.AI_AMOUNT; i++) {
-            biplanes[i].update(canvas);
-        }
-        for (int i = 0; i < Const.T_TANKS_AMOUNT; i++) {
-            tanks[i].update(canvas);
-        }
+        ListIterator<DrawableObject> itr = objectList.listIterator();
 
-        for (Cloud itr : clouds) {
-            itr.update(canvas);
+        while (itr.hasNext()) {
+            itr.next().update(canvas);
         }
 
         cameraXPos = playerBiplane.getXPos() - canvas.getWidth() / 2;
@@ -198,25 +210,13 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
         }
     }
 
-    public void render(Canvas canvas) { // may be optimised: not to draw if not in camera
+    public void render(Canvas canvas) { // May be optimised: not to draw if not in camera
         canvas.drawColor(Color.rgb(0, 210, 255));
 
-        ground.draw(canvas, cameraXPos, cameraYPos);
-        for (int i = 0; i < Const.T_TANKS_AMOUNT; i++) {
-            tanks[i].draw(canvas, cameraXPos, cameraYPos);
-        }
-        for (int i = 0; i < Const.AI_AMOUNT; i++) {
-            biplanes[i].draw(canvas, cameraXPos, cameraYPos);
-        }
-        if (gameState) {
-            playerBiplane.draw(canvas, cameraXPos, cameraYPos);
-        }
-        for (Cloud itr : clouds) {
-            itr.draw(canvas, cameraXPos, cameraYPos);
-        }
+        ListIterator<DrawableObject> itr = objectList.listIterator();
 
-        if (gameState) {
-            hpBar.draw(canvas, cameraXPos, cameraYPos);
+        while (itr.hasNext()) {
+            itr.next().draw(canvas, cameraXPos, cameraYPos);
         }
 
         if (!gameState) {
@@ -274,5 +274,13 @@ public class MainGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     public int worldWidth() {
         return Const.W_WIDTH_COEFF * getWidth();
+    }
+
+    public static void setGameState(boolean val) {
+        gameState = val;
+    }
+
+    public static boolean getGameState() {
+        return gameState;
     }
 }

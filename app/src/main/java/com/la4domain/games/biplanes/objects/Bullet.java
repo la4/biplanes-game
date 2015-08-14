@@ -7,7 +7,8 @@ import android.graphics.Paint;
 
 import com.la4domain.games.biplanes.objects.components.Collision;
 import com.la4domain.games.biplanes.Const;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
+import com.la4domain.games.biplanes.objects.components.EntityObject;
 import com.la4domain.games.biplanes.objects.components.RenderHelper;
 import com.la4domain.games.biplanes.objects.components.Speed;
 import com.la4domain.games.biplanes.objects.components.SpriteHandler;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
 
-public class Bullet extends BaseObject {
+public class Bullet extends EntityObject {
 
     private static final String LOG_TAG = Bullet.class.getSimpleName();
 
@@ -41,6 +42,11 @@ public class Bullet extends BaseObject {
         drawingPaint.setColor(Color.rgb(100, 17, 36));
     }
 
+    /*
+     * Bullet's hpAmount is it's state:
+     * 0 - dead
+     * 1 - alive
+     */
     public boolean isAlive() {
         if (hpAmount > 0) {
             return true;
@@ -48,12 +54,14 @@ public class Bullet extends BaseObject {
         return false;
     }
 
-    public void update(Canvas canvas) {
+    @Override
+    public void updateStats(Canvas canvas) {
 
         if (lifeTimer == 0 || posY >= canvas.getHeight() * Const.W_HEIGHT_COEFF - Const.G_HEIGHT * context.getResources().getDisplayMetrics().density) {
             hpAmount = 0;
         }
 
+        // Lifecycle
         if (lifeTimer < Const.BUL_CYCLES * Const.BUL_FADE) {
             bulletSpeed.setXAcceleration(-0.5F);
         }
@@ -85,28 +93,32 @@ public class Bullet extends BaseObject {
             posX %= canvas.getWidth() * Const.W_WIDTH_COEFF;
         }
 
-        /*Collisions with other objects*/
-        ListIterator<BaseObject> itr = collisionList.listIterator();
+        checkCollisions();
+    }
+
+    protected void checkCollisions() {
+        ListIterator<EntityObject> itr = collisionList.listIterator();
 
         while (isAlive() && itr.hasNext()) {
-            BaseObject bufObj = itr.next();
+            EntityObject bufObj = itr.next();
             if (Collision.checkCollision(this, bufObj)) {
                 this.kill();
                 bufObj.reduceHp();
             }
         }
+    }
 
-        /*End*/
-}
-
+    @Override
     public void draw(Canvas canvas, float cameraXPos, float cameraYPos) {
         RenderHelper.loopedBulletDraw(spriteHandler, posX, posY, cameraXPos, cameraYPos, canvas, drawingPaint);
     }
 
+    @Override
     protected void animate() {
 
     }
 
+    @Override
     protected void rotate() {
 
     }

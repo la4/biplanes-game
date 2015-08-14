@@ -6,7 +6,8 @@ import android.graphics.Canvas;
 
 import com.la4domain.games.biplanes.Const;
 import com.la4domain.games.biplanes.objects.components.Animation;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
+import com.la4domain.games.biplanes.objects.components.EntityObject;
 import com.la4domain.games.biplanes.objects.components.RenderHelper;
 import com.la4domain.games.biplanes.objects.components.SpriteHandler;
 
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
 
-public class Tank extends BaseObject {
+public class Tank extends EntityObject {
 
     private static final String LOG_TAG = Tank.class.getSimpleName();
 
@@ -64,7 +65,7 @@ public class Tank extends BaseObject {
     }
 
     @Override
-    public void update(Canvas canvas) {
+    protected void updateStats(Canvas canvas) {
         if (hpAmount <= 0) {
             if (deathTimer > 0) {
                 deathTimer--;
@@ -74,8 +75,8 @@ public class Tank extends BaseObject {
                 destroyingAnimation = new Animation(spriteHandler, Const.T_DESTROYING_ANIMATION_SPEED, 0, 7, 19);
             }
         }
+
         tilt();
-        animate();
         shoot(canvas);
     }
 

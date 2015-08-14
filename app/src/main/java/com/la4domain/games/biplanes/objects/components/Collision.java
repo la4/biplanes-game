@@ -1,9 +1,15 @@
 package com.la4domain.games.biplanes.objects.components;
 
+/*
+ * ABOUT COLLISIONS IN THIS GAME
+ * We check collisions in two cases:
+ * 1. Player's biplane and other entities from collisonableList
+ * 2. Bullet and any other entity from collisionableList
+ */
 
 public class Collision {
 
-    public static boolean checkCollision(BaseObject obj1, BaseObject obj2) {
+    public static boolean checkCollision(DrawableObject obj1, DrawableObject obj2) {
         float rad1 = Math.min(obj1.spriteHandler.getTileHeight(), obj1.spriteHandler.getTileWidth());
         float rad2 = Math.min(obj2.spriteHandler.getTileHeight(), obj2.spriteHandler.getTileWidth());
 

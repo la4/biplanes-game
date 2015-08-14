@@ -5,12 +5,14 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
 import com.la4domain.games.biplanes.Const;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
+import com.la4domain.games.biplanes.objects.components.EntityObject;
 import com.la4domain.games.biplanes.objects.components.RenderHelper;
 import com.la4domain.games.biplanes.objects.components.Speed;
 import com.la4domain.games.biplanes.objects.components.SpriteHandler;
 
-public class Cloud extends BaseObject {
+public class Cloud extends EntityObject {
+
     private int direction;
     private Speed cloudSpeed;
 
@@ -31,10 +33,15 @@ public class Cloud extends BaseObject {
     }
 
     @Override
-    public void update(Canvas canvas) {
-        animate();
-        rotate();
-        updatePosition(canvas);
+    protected void updateStats(Canvas canvas) {
+        posX += cloudSpeed.getXShift();
+
+        if (posX < 0) {
+            posX = canvas.getWidth() * Const.W_WIDTH_COEFF + posX;
+        }
+        if (posX > canvas.getWidth() * Const.W_WIDTH_COEFF) {
+            posX %= canvas.getWidth() * Const.W_WIDTH_COEFF;
+        }
     }
 
     @Override
@@ -45,14 +52,5 @@ public class Cloud extends BaseObject {
     protected void rotate() {
     }
 
-    protected void updatePosition(Canvas canvas) {
-        posX += cloudSpeed.getXShift();
 
-        if (posX < 0) {
-            posX = canvas.getWidth() * Const.W_WIDTH_COEFF + posX;
-        }
-        if (posX > canvas.getWidth() * Const.W_WIDTH_COEFF) {
-            posX %= canvas.getWidth() * Const.W_WIDTH_COEFF;
-        }
-    }
 }

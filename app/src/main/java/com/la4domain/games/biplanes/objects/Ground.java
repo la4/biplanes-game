@@ -5,10 +5,10 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
 import com.la4domain.games.biplanes.Const;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
 import com.la4domain.games.biplanes.objects.components.SpriteHandler;
 
-public class Ground extends BaseObject {
+public class Ground extends DrawableObject {
 
     public Ground(Context context, Bitmap sprite, float x, float y) {
         this.context = context;
@@ -32,16 +32,11 @@ public class Ground extends BaseObject {
 
     @Override
     public void update(Canvas canvas) {
-        animate();
-        rotate();
     }
 
     @Override
-    protected void animate() {
-    }
+    public void animate() {
 
-    @Override
-    protected void rotate() {
     }
 
 }

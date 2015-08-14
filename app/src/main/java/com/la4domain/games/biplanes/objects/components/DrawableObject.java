@@ -3,13 +3,11 @@ package com.la4domain.games.biplanes.objects.components;
 import android.content.Context;
 import android.graphics.Canvas;
 
-public abstract class BaseObject {
-
-    protected SpriteHandler spriteHandler; // A sprite or canvas primitive, visible for Collision
-
-    protected int hpAmount;
+public abstract class DrawableObject {
 
     protected Context context;
+
+    protected SpriteHandler spriteHandler; // A sprite or canvas primitive, visible for Collision
 
     protected float posX, posY;
 
@@ -25,20 +23,5 @@ public abstract class BaseObject {
 
     abstract public void update(Canvas canvas);
 
-    abstract protected void rotate();
-
     abstract protected void animate();
-
-    public void reduceHp() {
-        if (hpAmount > 0) {
-            hpAmount--;
-        }
-    }
-
-    public int getHpAmount() {
-        return hpAmount;
-    }
-    public void kill() {
-        hpAmount = 0;
-    }
 }

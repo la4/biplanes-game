@@ -3,13 +3,13 @@ package com.la4domain.games.biplanes.objects;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.util.Log;
 
 import com.la4domain.games.biplanes.MainGameView;
 import com.la4domain.games.biplanes.objects.components.Collision;
 import com.la4domain.games.biplanes.Const;
 import com.la4domain.games.biplanes.objects.components.Animation;
-import com.la4domain.games.biplanes.objects.components.BaseObject;
+import com.la4domain.games.biplanes.objects.components.DrawableObject;
+import com.la4domain.games.biplanes.objects.components.EntityObject;
 import com.la4domain.games.biplanes.objects.components.Speed;
 import com.la4domain.games.biplanes.objects.components.SpriteHandler;
 import com.la4domain.games.biplanes.objects.components.RenderHelper;
@@ -18,7 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-public class Biplane extends BaseObject {
+public class Biplane extends EntityObject {
 
     protected static final String LOG_TAG = Biplane.class.getSimpleName();
 
@@ -55,6 +55,26 @@ public class Biplane extends BaseObject {
         shootingTimer = 0;
     }
 
+    public void reset(Bitmap sprite, float posX, float posY) {
+        this.posX = posX;
+        this.posY = posY;
+
+        hpAmount = Const.B_HP;
+        spriteHandler = new SpriteHandler(sprite, sprite.getWidth() / Const.B_COLUMN_NUM,
+                sprite.getHeight() / ((Const.B_TILE_AMOUNT - 1) / Const.B_COLUMN_NUM + 1),
+                Const.B_TILE_AMOUNT, Const.B_COLUMN_NUM, 0);
+        flyingBiplaneAnimation = new Animation(spriteHandler, Const.B_FLYING_ANIMATION_SPEED, 2, 0, 3);
+        destroyingBiplaneAnimation = new Animation(spriteHandler, Const.B_DESTROYING_ANIMATION_SPEED, 0, 4, 15);
+        biplaneSpeed = new Speed(Const.B_FLYING_SPEED, 0);
+        bulletList = new LinkedList<Bullet>();
+
+        isSteeringUpwards = false;
+        isSteeringDownwards = false;
+        isShooting = false;
+        shootingTimer = 0;
+    }
+
+
     @Override
     public void draw(Canvas canvas, float cameraXPos, float cameraYPos) {
 
@@ -62,16 +82,9 @@ public class Biplane extends BaseObject {
             ((Bullet) bulletList.get(i)).draw(canvas, cameraXPos, cameraYPos);
         }
 
-        RenderHelper.loopedDraw(spriteHandler.getSprite(), posX, posY, cameraXPos, cameraYPos, canvas);
-    }
-
-    @Override
-    public void update(Canvas canvas) {
-        updatePosition(canvas);
-        animate();
-        rotate();
-        shoot(canvas);
-        Log.d(LOG_TAG, Integer.toString(hpAmount));
+        if (MainGameView.getGameState()) {
+            RenderHelper.loopedDraw(spriteHandler.getSprite(), posX, posY, cameraXPos, cameraYPos, canvas);
+        }
     }
 
     @Override
@@ -93,22 +106,33 @@ public class Biplane extends BaseObject {
         }
     }
 
-    protected void updatePosition(Canvas canvas) {
-        /*Coordinate system is strange.
+    @Override
+    public void update(Canvas canvas) {
+        if (MainGameView.getGameState()) {
+            //Ending the round
+            if (hpAmount == 0 && biplaneSpeed.getXShift() == 0 && biplaneSpeed.getYShift() == 0) {
+                MainGameView.setGameState(false);
+            }
+
+            checkCollisions();
+            super.update(canvas);
+        }
+    }
+
+    @Override
+    protected void updateStats(Canvas canvas) {
+        /*Coordinate system is different from math's:
         * positive angle in tiltDegree means steering clockwise, negative - counterclockwise.
         * Not like in math.
         * Pixel grid has Y axis directed down. So be careful when trying to calculate dimensions*/
 
-
         biplaneSpeed.update();
+
+        //Death
         if (hpAmount == 0) {
             biplaneSpeed.setYAcceleration(-0.07F);
             biplaneSpeed.setXAcceleration(-0.07F);
             posY += Const.B_FALLING_SPEED;
-        }
-
-        if (hpAmount == 0 && biplaneSpeed.getXShift() == 0 && biplaneSpeed.getYShift() == 0) {
-            MainGameView.gameState = false;
         }
 
         posX += biplaneSpeed.getXShift() * Math.cos(Math.toRadians(spriteHandler.getTiltDegree()));
@@ -117,7 +141,11 @@ public class Biplane extends BaseObject {
         posX -= biplaneSpeed.getYShift() * Math.sin(Math.toRadians(spriteHandler.getTiltDegree()));
         posY -= biplaneSpeed.getYShift() * Math.cos(Math.toRadians(spriteHandler.getTiltDegree()));
 
+        checkWorldSides(canvas);
+        shoot(canvas);
+    }
 
+    protected void checkWorldSides(Canvas canvas) {
         if (posX < 0) {
             posX = canvas.getWidth() * Const.W_WIDTH_COEFF + posX;
         }
@@ -133,18 +161,17 @@ public class Biplane extends BaseObject {
             hpAmount = 0;
             posY = canvas.getHeight() * Const.W_HEIGHT_COEFF - Const.G_HEIGHT * context.getResources().getDisplayMetrics().density;
         }
-
-        /*Collisions with other objects*/
-        ListIterator<BaseObject> itr = collisionList.listIterator();
+    }
+    protected void checkCollisions() {
+        ListIterator<EntityObject> itr = collisionList.listIterator();
 
         while (itr.hasNext()) {
-            BaseObject bufObj = itr.next();
+            EntityObject bufObj = itr.next();
             if (bufObj != this && Collision.checkCollision(this, bufObj)) {
                 this.kill();
                 bufObj.kill();
             }
         }
-        /*End*/
     }
 
     protected void shoot(Canvas canvas) {
